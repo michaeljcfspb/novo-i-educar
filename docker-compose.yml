@@ -1,0 +1,59 @@
+﻿# Ambiente completo: PostgreSQL + Django/DRF + React servido por Nginx.
+# Uso local:  cp .env.example .env && docker compose up -d --build
+name: ieducar
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ieducar}
+      POSTGRES_USER: ${POSTGRES_USER:-ieducar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ieducar}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ieducar} -d ${POSTGRES_DB:-ieducar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [interna]
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    expose:
+      - "8000"
+    networks: [interna]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api/v1
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks: [interna]
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:
+
+networks:
+  interna:
+    driver: bridge

@@ -1,0 +1,9 @@
+﻿Django>=5.2,<5.3
+djangorestframework>=3.16
+django-filter>=25
+drf-spectacular>=0.28
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+gunicorn>=23
+whitenoise>=6.8
+reportlab>=4.2
